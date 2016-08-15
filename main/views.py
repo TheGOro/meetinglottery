@@ -19,7 +19,12 @@ def home(request):
     for candidate, count in test.iteritems():
         test[candidate] = str((float(count) / float(cycles)) * 100.0) + '%'
 
-    return HttpResponse(str(test))
+    return render(request, "index.html",
+        {
+            'title': "Meeting lotteru",
+            'message': str(test)
+        }
+    )
 
 def calculate_probabilities(participations):
     candidate_count = len(participations)
