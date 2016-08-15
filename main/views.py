@@ -1,8 +1,8 @@
-#!/usr/bin/env python
-
+from django.shortcuts import render
+from django.http import HttpResponse
 import random
 
-def main():
+def home(request):
     # Candidate list with participations
     participations = [("Visor", 2), ("Xaero", 6), ("Anarki", 0), ("Phobos", 1), ("Uriel", 4)]
 	
@@ -19,7 +19,7 @@ def main():
     for candidate, count in test.iteritems():
         test[candidate] = str((float(count) / float(cycles)) * 100.0) + '%'
 
-    print test
+    return HttpResponse(str(test))
 
 def calculate_probabilities(participations):
     candidate_count = len(participations)
@@ -57,7 +57,3 @@ def pick(candidates_with_relative_probabilities):
         cumulative_probability += float(relative_probability)
         if draw < cumulative_probability: break
     return candidate
-
-# Entry point
-if __name__ == '__main__':
-    main()
