@@ -1,64 +1,97 @@
 from django.shortcuts import render
 from django.http import HttpResponse
+from models import Candidate, Participation
+from django.db.models import Count, Case, When
+
 import random
+from copy import deepcopy
 
-def home(request):
-    # Candidate list with participations
-    participations = [("Visor", 2), ("Xaero", 6), ("Anarki", 0), ("Phobos", 1), ("Uriel", 4)]
-	
-    test = {}
-    cycles = 10000
-    for i in range(0, cycles):
-        relative_probabilities = calculate_probabilities(participations)
-        candidate = pick(relative_probabilities)
-        if candidate in test:
-            test[candidate] += 1
-        else:
-            test[candidate] = 0
+def chances(request):
+    candidates = get_candidates()
 
-    for candidate, count in test.iteritems():
-        test[candidate] = str((float(count) / float(cycles)) * 100.0) + '%'
+    # Calculate the chances
+    calculate_probabilities(candidates)
+    for candidate in candidates:
+        candidate['chance'] = "{:.2%}".format(candidate['relative_probability'])
 
-    return render(request, "index.html",
+    return render(request, "chances.html",
         {
-            'title': "Meeting lotteru",
-            'message': str(test)
+            'title': "Meeting lottery",
+            'candidates': candidates
         }
     )
 
-def calculate_probabilities(participations):
-    candidate_count = len(participations)
+def pick(request):
+    candidates = get_candidates()
+    calculate_probabilities(candidates)
+    candidate = pick_candidate(candidates)
+
+    participant = Candidate.objects.get(pk=candidate['id'])
+    participation = Participation(candidate=participant, classification=Participation.ALONE)
+    participation.save()
+    
+    return render(request, "pick.html", {'candidate': candidate}) 
+
+def get_candidates():
+    # Get candidates along with the different participation counts
+    candidates = Candidate.objects.annotate(
+        num_participations_alone=Count(
+            Case(
+                When(participation__classification=Participation.ALONE, then=1)
+            )
+        ),
+        num_participations_together=Count(
+            Case(
+                When(participation__classification=Participation.TOGETHER, then=1)
+            )
+        )
+    )
+
+    # Calculate the weighted participations
+    participations = []
+    for candidate in candidates:
+        name = candidate.name
+        participation = (candidate.num_participations_alone +
+                         candidate.num_participations_together * 0.5)
+        item = {
+            'id': candidate.id,
+            'name': candidate.name,
+            'participation': participation
+        }
+
+        participations.append(item)
+
+    return participations  
+
+def calculate_probabilities(candidates):
+    candidate_count = len(candidates)
 
     overall_participations = 0.0
-    for _, participation_count in participations:
-        overall_participations += participation_count
+    for candidate in candidates:
+        overall_participations += candidate['participation']
 
-    probabilities = []
     overall_probability = 0.0
-    for candidate, participation_count in participations:
-        probability = overall_participations - participation_count + 1.0
+    for candidate in candidates:
+        probability = overall_participations - candidate['participation'] + 1.0
         overall_probability += probability
-        item = (candidate, probability)
-        probabilities.append(item)
+        candidate['probability'] = probability
 
-    relative_probabilities = []
-    for candidate, probability in probabilities:
-        relative_probability = probability / overall_probability
-        item = (candidate, relative_probability)
-        relative_probabilities.append(item)
+    for candidate in candidates:
+        relative_probability = candidate['probability'] / overall_probability
+        candidate['relative_probability'] = relative_probability
 
-    return relative_probabilities
+    return candidates
 
-def pick(candidates_with_relative_probabilities):
-    candidates = candidates_with_relative_probabilities
+def pick_candidate(candidates):
+    candidate_pool = deepcopy(candidates)
     # Shuffling the order of candidates
-    random.shuffle(candidates)
+    random.shuffle(candidate_pool)
 
     # Drawing the fortune number
     draw = random.uniform(0, 1)
 
     cumulative_probability = 0.0
-    for candidate, relative_probability in candidates:
-        cumulative_probability += float(relative_probability)
+    for candidate in candidate_pool:
+        cumulative_probability += candidate['relative_probability']
         if draw < cumulative_probability: break
     return candidate

@@ -1,0 +1,15 @@
+<html>
+    <head>
+        <title>{{ title }}</title>
+    </head>
+    <body>
+        <h1>Meeting lottery</h1>
+        <h2>Chances:</h2>
+        <ul>
+        {% for candidate in candidates %}
+            <li>{{ candidate.name }} &ndash; {{ candidate.chance }}</li>
+        {% endfor %}
+        </ul>
+        <a href="/pick">Draw a meeting participant</a>
+    </body>
+</html>

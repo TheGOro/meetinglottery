@@ -20,8 +20,7 @@ class Participation(models.Model):
         (TOGETHER, 'Together'),
         (VACATION, 'Vacation')
     )
-    candidate = models.ForeignKey(Candidate,
-                                  related_name="candidate")
+    candidate = models.ForeignKey(Candidate)
     classification = models.CharField(max_length=2,
                                      choices=CLASSIFICATION_CHOICES,
                                      default=ALONE)
