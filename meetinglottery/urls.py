@@ -15,10 +15,13 @@ Including another URLconf
 """
 from django.conf.urls import url
 from django.contrib import admin
+from django.views.generic.base import RedirectView
+
 from main import views
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^chances$', views.chances, name='chances'),
-    url(r'^pick$', views.pick, name='pick')
+    url(r'^pick$', views.pick, name='pick'),
+    url(r'^.*$', RedirectView.as_view(url='/chances', permanent=False))
 ]
