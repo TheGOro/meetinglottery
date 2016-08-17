@@ -7,7 +7,7 @@ class Candidate(models.Model):
     name = models.CharField(max_length=30,
                             unique=True)
 
-    def __str__(self):
+    def __unicode__(self):
         return self.name
 
 
@@ -26,6 +26,6 @@ class Participation(models.Model):
                                      default=ALONE)
     date = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
+    def __unicode__(self):
         return (self.date.strftime('%Y. %m. %d. %H:%M') + ' - ' + self.candidate.name +
                 ' (' + self.classification + ')')
